@@ -1,4 +1,2 @@
-nodejs/node_modules
-java/web/WEB-INF/classes
-java/web/WEB-INF/lib
-key.pem
+web/WEB-INF/classes
+web/WEB-INF/lib
