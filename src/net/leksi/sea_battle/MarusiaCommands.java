@@ -45,7 +45,14 @@ public class MarusiaCommands {
         put("з", 7);
         put("и", 8);
         put("к", 9);
+        put("a", 10);
         put("b", 11);
+        put("v", 12);
+        put("g", 13);
+        put("d", 14);
+        put("e", 15);
+        put("i", 18);
+        put("k", 19);
         put("z", 17);
     }};
 

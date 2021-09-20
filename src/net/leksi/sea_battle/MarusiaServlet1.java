@@ -103,7 +103,6 @@ public class MarusiaServlet1 extends HttpServlet {
             boolean wait_continue_or_new = ms.wait_continue_or_new;
 
             if ("on_interrupt".equals(input.command)) {
-                getServletContext().log("1");
                 add_to_response(TXT_SO_LONG, false, TTS_SO_LONG, response);
                 response.put("end_session", true);
                 sessions.remove(user_id);
@@ -111,24 +110,20 @@ public class MarusiaServlet1 extends HttpServlet {
                 break;
             }
             if (session_new || command_is_rules(input, ms)) {
-                getServletContext().log("2");
                 rules_response(response, ms, false);
                 break;
             }
             ms.rules_part = 1;
             if(command_is_new_game(input, ms)) {
-                getServletContext().log("7");
                 sessions.remove(user_id);
                 ms = null;
                 continue;
             }
             if (in_rules) {
                 if (command_is_play(input, ms)) {
-                    getServletContext().log("3");
                     ms.in_rules = false;
                     ms.rules_part = 1;
                 } else {
-                    getServletContext().log("4");
                     dont_understand_response(response);
                     rules_response(response, ms, true);
                     break;
@@ -136,22 +131,18 @@ public class MarusiaServlet1 extends HttpServlet {
             }
             if (ms.wait_continue_or_new) {
                 if (session_new || in_rules) {
-                    getServletContext().log("5");
                     continue_game_response(response, false);
                     break;
                 }
                 if (command_is_play(input, ms)) {
-                    getServletContext().log("6");
                     ms.wait_continue_or_new = false;
                 }
-                getServletContext().log("8");
                 dont_understand_response(response);
                 continue_game_response(response, true);
                 break;
             }
 
             if(ms.stage == NEW) {
-                getServletContext().log("9");
                 ms.stage = WAIT_TYPE;
                 what_way_response(response);
                 break;
@@ -160,7 +151,6 @@ public class MarusiaServlet1 extends HttpServlet {
             if(ms.stage == WAIT_TYPE) {
                 String command = command_as_player(input, ms);
                 if (command.startsWith("player:")) {
-                    getServletContext().log("10");
                     EnumSet<PlayerType> set = EnumSet.noneOf(PlayerType.class);
                     switch (command) {
                         case PAYLOAD_PLAYER_BOTH:
@@ -175,35 +165,28 @@ public class MarusiaServlet1 extends HttpServlet {
                             break;
                     }
                     ms.processor.reset(set);
-                    getServletContext().log(set.toString());
                     if (set.size() == 1) {
                         if (set.stream().findAny().get() == PlayerType.ME) {
-                            getServletContext().log("11");
                             say_when_ready_response(response, false);
                             ms.stage = WAIT_ENEMY_READY;
                             break;
                         }
-                        getServletContext().log("12");
                         start_response(response);
                         ms.stage = WAIT_ENEMY_SHOOT;
                         break;
                     }
-                    getServletContext().log("13");
                     start_when_ready_response(response);
                     ms.stage = WAIT_ENEMY_SHOOT;
                     break;
                 }
                 if(!in_rules) {
-                    getServletContext().log("14");
                     dont_understand_response(response);
                 }
-                getServletContext().log("15");
                 what_way_response(response);
                 break;
             }
 
             if(in_rules) {
-                getServletContext().log("16");
                 if(ms.last_response != null) {
                     response = ms.last_response;
                 }
@@ -214,7 +197,6 @@ public class MarusiaServlet1 extends HttpServlet {
                 String command = command_as_shoot(input, enemy_shoot, getServletContext());
                 getServletContext().log(command + ", " + Arrays.toString(enemy_shoot));
                 if (command.equals("shoot")) {
-                    getServletContext().log("17");
                     ResultType res = ms.processor.enemy_shoot(enemy_shoot);
                     if (res == ResultType.MISSED || res == ResultType.INJURED || res == ResultType.KILLED) {
                         shoot_response(enemy_shoot, false, false, response);
@@ -232,33 +214,27 @@ public class MarusiaServlet1 extends HttpServlet {
                         if (!ms.processor.getState().isOutOfGame()) {
                             ms.last_response = response;
                             if (ms.processor.getSet().size() == 2 && ms.processor.getState().state() == State.WAIT_ME_SHOOT) {
-                                getServletContext().log("18");
                                 ms.stage = WAIT_ME_SHOOT;
                                 continue;
                             }
-                            getServletContext().log("19");
                             enemy_move_response(response);
                             break;
                         }
                     }
                 }
                 if (!ms.processor.getState().isOutOfGame()) {
-                    getServletContext().log("20");
                     milk_shoot_response(input.ou, response);
                     enemy_move_response(response);
                     break;
                 }
-                getServletContext().log("21");
             }
 
             if(ms.stage == WAIT_ENEMY_READY || ms.stage == WAIT_ME_SHOOT) {
                 if(ms.stage == WAIT_ENEMY_READY && !command_is_ready(input, ms)) {
-                    getServletContext().log("22");
                     dont_understand_response(response);
                     say_when_ready_response(response, true);
                     break;
                 }
-                getServletContext().log("23");
                 me_shoot[0] = me_shoot[1] = -1;
                 ResultType res = ms.processor.my_shoot(me_shoot);
                 if(res == ResultType.OK) {
@@ -272,7 +248,6 @@ public class MarusiaServlet1 extends HttpServlet {
             if(ms.stage == WAIT_ENEMY_ANSWER) {
                 String command = command_as_answer(input, ms);
                 if (command.startsWith("answer:")) {
-                    getServletContext().log("24");
                     ResultType answer = ResultType.OK;
                     switch (command) {
                         case PAYLOAD_ANSWER_MISSED:
@@ -286,15 +261,12 @@ public class MarusiaServlet1 extends HttpServlet {
                             break;
                     }
                     if(answer != ResultType.OK) {
-                        getServletContext().log("25");
                         ResultType res = ms.processor.enemy_answer(answer);
                         if (res == ResultType.OK && !ms.processor.getState().isOutOfGame()) {
                             if (ms.processor.getSet().size() == 2 && ms.processor.getState().state() == State.WAIT_ENEMY_SHOOT) {
-                                getServletContext().log("26");
                                 enemy_move_response(response);
                                 ms.stage = WAIT_ENEMY_SHOOT;
                             } else {
-                                getServletContext().log("27");
                                 ms.stage = WAIT_ME_SHOOT;
                                 continue;
                             }
@@ -302,10 +274,8 @@ public class MarusiaServlet1 extends HttpServlet {
                     }
                 } else {
                     if (ms.processor.remind_me_last_shoot(me_shoot) == ResultType.OK) {
-                        getServletContext().log("28");
                         answer_to_my_shoot_response(response);
                     } else {
-                        getServletContext().log("29");
                         dont_understand_response(response);
                     }
                 }
@@ -314,37 +284,29 @@ public class MarusiaServlet1 extends HttpServlet {
             if(ms.processor.getState().isOutOfGame()) {
                 if (ms.processor.getState().state() == State.OVER) {
                     if (ms.processor.getSet().size() == 2) {
-                        getServletContext().log("30");
                         int my_killed = ms.processor.getStat(PlayerType.ME).killed;
                         int enemy_killed = ms.processor.getStat(PlayerType.ENEMY).killed;
                         if (my_killed > enemy_killed) {
-                            getServletContext().log("31");
                             add_to_response(TXT_YOU_LOOSE, true, TTS_YOU_LOOSE, response);
                         } else if (my_killed < enemy_killed) {
-                            getServletContext().log("32");
                             add_to_response(TXT_YOU_WIN, true, TTS_YOU_WIN, response);
                         } else {
-                            getServletContext().log("33");
                             add_to_response(TXT_DRAW, true, TTS_DRAW, response);
                         }
                     } else {
-                        getServletContext().log("34");
                         add_to_response(TXT_GAME_OVER, true, TTS_GAME_OVER, response);
                     }
                 } else if (ms.processor.getState().state() == State.FAILED) {
                     add_to_response(TXT_FAILED,
                             false, TTS_FAILED, response);
                     if (ms.processor.getSet().size() == 2) {
-                        getServletContext().log("35");
                         add_to_response(TXT_YOU_LOOSE,
                                 true, TTS_YOU_LOOSE, response);
                     } else {
-                        getServletContext().log("36");
                         add_to_response(TXT_GAME_OVER,
                                 true, TTS_GAME_OVER, response);
                     }
                 }
-                getServletContext().log("37");
                 response.put("end_session", true);
                 ms.stage = NEW;
                 break;
@@ -355,11 +317,10 @@ public class MarusiaServlet1 extends HttpServlet {
         } while (true);
 
         if (!response.getBoolean("end_session")) {
-            getServletContext().log("38");
             if (!ms.in_rules) {
-                getServletContext().log("39");
             }
         }
+        getServletContext().log(response.toString());
         jo1.put("response", response);
         jo1.put("session", new JSONObject(session, "session_id", "user_id", "message_id"));
         jo1.put("version", jo.get("version"));

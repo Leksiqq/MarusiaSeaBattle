@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="724545d5-52f8-4bdf-9799-b2aee74940cd" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/net/leksi/sea_battle/MarusiaCommands.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/leksi/sea_battle/MarusiaCommands.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/net/leksi/sea_battle/MarusiaServlet1.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/net/leksi/sea_battle/MarusiaServlet1.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -26,7 +28,7 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectId" id="1y7tulvewMlujdehroftfLLlhYy" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
