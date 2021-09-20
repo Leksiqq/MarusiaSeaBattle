@@ -1,0 +1,137 @@
+body {
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+}
+.field {
+    position: fixed;
+    white-space:nowrap;
+    border-collapse: collapse;
+    display: table;
+    transition: top,left 1s;
+    user-select: none;
+}
+.field.blur {
+    filter: blur(3px);
+}
+#my_field .cell {
+    cursor: default;
+}
+#enemy_field .cell {
+    cursor: default;
+}
+#enemy_field .cell, 
+#enemy_field .head_cell, 
+#enemy_field .left_cell,
+#enemy_field .footer_cell
+{
+    border-color: lightgrey;
+}
+.row {
+    display: table-row;
+}
+
+.cell {
+    display: table-cell;
+    border: solid 2px blue;
+    text-align: center;
+    vertical-align: middle;
+    color: white;
+    text-indent: 100%; 
+    white-space: nowrap; 
+    overflow: hidden;
+}
+#my_field .unknown {
+    cursor: crosshair;
+}
+.missed {
+    text-indent: 0%; 
+    color: black;
+}
+.injured {
+    text-indent: 0%; 
+    color: goldenrod;
+}
+.killed {
+    text-indent: 0%; 
+    color: red;
+}
+.head_row {
+    display: table-row;
+    padding-bottom: 5px;
+}
+.head_cell {
+    display: table-cell;
+    text-align: center;
+    padding-bottom: 5px;
+    border-left: solid 2px blue;
+    border-right: solid 2px blue;
+    cursor: default;
+    font-family: monospace;
+    font-weight: bold;
+}
+.left_cell {
+    display: table-cell;
+    text-align: right;
+    padding-right: 5px;
+    vertical-align: middle;
+    border-top: solid 2px blue;
+    border-bottom: solid 2px blue;
+    cursor: default;
+    font-family: monospace;
+    font-weight: bold;
+    width: 1px;
+}
+.corner_cell {
+    display: table-cell;
+    text-align: right;
+    padding-right: 5px;
+}
+.menu_link {
+    cursor: pointer;
+    color: blue;
+    font-weight: bold;
+}
+.footer_cell {
+    display: table-cell;
+    border-left: solid 2px blue;
+    border-right: solid 2px blue;
+}
+#menu {
+    text-align: center;
+    position: absolute;
+    display: none;
+    background-color: white;
+    border: solid 2px blue;
+    padding: 10px;
+    border-radius: 0 20px 20px 20px;
+}
+#menu button:not(#rules) {
+    display: none;
+}
+.game_over, .game_start, 
+#enemy_answer, #game_over_wrong_layout, 
+#game_over_wrong_answer  {
+    position: absolute;
+    display: none;
+    background-color: white;
+    border: solid 2px blue;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.you_loose, .game_failed {
+    display: none;
+}
+
+#spinner {
+    position: fixed;
+    border-radius:50%;
+    background:conic-gradient(#0000 10%,blue);
+    mask:radial-gradient(farthest-side,#0000 calc(100% - 8px),#000 0);
+    animation:s3 1s infinite linear;
+    display: none;
+  }
+  @keyframes s3 {to{transform: rotate(1turn)}
+}
