@@ -319,6 +319,13 @@ public class MarusiaServlet1 extends HttpServlet {
                                 true, TTS_GAME_OVER, response);
                     }
                 }
+                getServletContext().log(ms.processor.getState().state() + ", " + ms.processor.getStat(PlayerType.ME) + ", " + ms.processor.getStat(PlayerType.ENEMY));
+                if(ms.processor.getState().state() == State.FAILED) {
+                    getServletContext().log(ms.processor.getState().failed().toString());
+                    getServletContext().log(Arrays.stream(ms.processor.getState().stackTrace()).map(v -> v.getMethodName() + ":" + v.getLineNumber()).
+                            collect(Collectors.joining("\n"))
+                    );
+                }
                 response.put("end_session", true);
                 ms.stage = NEW;
                 break;
@@ -338,6 +345,8 @@ public class MarusiaServlet1 extends HttpServlet {
         jo1.put("version", jo.get("version"));
         String tmp = jo1.toString();
 
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
         resp.setStatus(200);
         resp.getWriter().println(tmp);
 
@@ -365,7 +374,7 @@ public class MarusiaServlet1 extends HttpServlet {
     }
 
     private void enemy_move_response(JSONObject response) {
-        add_to_response(TXT_YOUR_MOVE, false, TTS_YOUR_MOVE, response);
+        add_to_response(TXT_YOUR_MOVE, true, TTS_YOUR_MOVE, response);
     }
 
     private void shoot_response(int[] shoot, boolean bubble, boolean with_buttons, JSONObject response) {

@@ -179,7 +179,7 @@ public class SeaBattleProcessor {
                 }
             }
 
-            if(set.contains(PlayerType.ENEMY) && answer == ResultType.MISSED) {
+            if(set.contains(PlayerType.ENEMY) && (answer == ResultType.MISSED)) {
                 state.state(State.WAIT_ENEMY_SHOOT);
             } else {
                 state.state(State.WAIT_ME_SHOOT);
