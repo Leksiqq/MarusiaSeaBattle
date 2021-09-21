@@ -3,7 +3,7 @@ package net.leksi.sea_battle;
 public class MarusiaPatterns {
     static final String PATTERN_RULES = "Правила";
     static final String PATTERN_FARTHER = "Дальше";
-    static final String PATTERN_PLAY = "Играем";
+    static final String[] PATTERN_PLAY = new String[]{"Играем", "Давай", "Ну давай"};
     static final String PATTERN_CONTINUE = "Продолжаем";
     static final String PATTERN_NEW_GAME = "Заново";
     static final String PATTERN_BOTH = "По очереди";

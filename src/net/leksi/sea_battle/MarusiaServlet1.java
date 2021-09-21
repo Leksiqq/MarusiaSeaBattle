@@ -408,7 +408,7 @@ public class MarusiaServlet1 extends HttpServlet {
         } else {
             ms.rules_part = 1;
         }
-        response.getJSONArray(BUTTONS).put(create_button(PATTERN_PLAY, PAYLOAD_PLAY));
+        response.getJSONArray(BUTTONS).put(create_button(PATTERN_PLAY[0], PAYLOAD_PLAY));
     }
 
     private void add_to_response(String text, boolean bubble, String tts, JSONObject response) {

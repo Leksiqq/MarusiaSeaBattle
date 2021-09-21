@@ -88,7 +88,7 @@ public class MarusiaCommands {
             if(ms.wait_continue_or_new) {
                 add(PATTERN_CONTINUE);
             } else {
-                add(PATTERN_PLAY);
+                addAll(Arrays.stream(PATTERN_PLAY).collect(Collectors.toList()));
             }
         }}.stream().toArray(String[]::new));
         return (input.tokens.length == 1 && ms.comparator.get_score(Arrays.stream(input.tokens).collect(Collectors.joining(SPACE))) > TANIMOTO_THRESHOLD);
