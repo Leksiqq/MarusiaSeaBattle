@@ -39,30 +39,42 @@ public class MarusiaServlet1 extends HttpServlet {
             }
         }
         String content = null;
+        JSONObject jo = null;
+        JSONObject session = null;
+        JSONObject request = null;
+        JSONObject meta = null;
+        boolean sole = false;
+        String sessiond_id = null;
+        String user_id = null;
+        InputHolder input = null;
+        boolean session_new = true;
         try (
                 InputStreamReader isr = new InputStreamReader(req.getInputStream(), charset.toUpperCase());
                 BufferedReader br = new BufferedReader(isr)
         ) {
             content = br.lines().collect(Collectors.joining("\n"));
+            jo = new JSONObject(content);
+            session = (JSONObject) jo.get("session");
+            JSONObject fin_req = request = (JSONObject) jo.get("request");
+            meta = (JSONObject) jo.get("meta");
+            sole = req.getRequestURI().contains("/sole");
+            sessiond_id = sole ? "sole" : session.getString("session_id");
+            user_id = sole ? "sole" : session.getString("user_id");
+            input = new InputHolder() {
+                {
+                    tokens = fin_req.getJSONObject("nlu").getJSONArray("tokens").toList().stream().toArray(String[]::new);
+                    command = fin_req.getString("command");
+                    ou = fin_req.getString("original_utterance");
+                    payload = fin_req.getString("type").equals("ButtonPressed") && fin_req.has("payload") ?
+                            fin_req.getJSONObject("payload").getString("data") : null;
+                }
+            };
+            session_new = session.getBoolean("new");
+        } catch (Exception ex) {
+            resp.setStatus(500);
+            resp.getWriter().println("Request failed");
         }
-        JSONObject jo = new JSONObject(content);
-        JSONObject session = (JSONObject) jo.get("session");
-        JSONObject request = (JSONObject) jo.get("request");
-        JSONObject meta = (JSONObject) jo.get("meta");
-        boolean sole = req.getRequestURI().contains("/sole");
-        String sessiond_id = sole ? "sole" : session.getString("session_id");
-        String user_id = sole ? "sole" : session.getString("user_id");
-        InputHolder input = new InputHolder() {
-            {
-                tokens = request.getJSONObject("nlu").getJSONArray("tokens").toList().stream().toArray(String[]::new);
-                command = request.getString("command");
-                ou = request.getString("original_utterance");
-                payload = request.getString("type").equals("ButtonPressed") && request.has("payload") ?
-                        request.getJSONObject("payload").getString("data") : null;
-            }
-        };
         MarusiaSession ms = sessions.getOrDefault(user_id, null);
-        boolean session_new = session.getBoolean("new");
         if(session_new) {
             if(ms != null) {
                 if (ms.stage == WAIT_ENEMY_SHOOT || ms.stage == WAIT_ENEMY_ANSWER || ms.stage == WAIT_ENEMY_READY) {
