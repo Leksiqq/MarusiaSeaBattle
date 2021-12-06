@@ -29,6 +29,11 @@
 
     <request-character-encoding>UTF-8</request-character-encoding>
 
+    <context-param>
+        <param-name>marusia.sessions.path</param-name>
+        <param-value>/marusia/sessions</param-value>
+    </context-param>
+
     <servlet>
         <servlet-name>MainServlet</servlet-name>
         <servlet-class>net.leksi.sea_battle.MainServlet</servlet-class>
@@ -36,10 +41,6 @@
     <servlet>
         <servlet-name>MarusiaServlet</servlet-name>
         <servlet-class>net.leksi.sea_battle.MarusiaServlet</servlet-class>
-    </servlet>
-    <servlet>
-        <servlet-name>MarusiaServlet1</servlet-name>
-        <servlet-class>net.leksi.sea_battle.MarusiaServlet1</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>MarusiaTestServlet</servlet-name>
@@ -50,12 +51,20 @@
         <url-pattern>/main</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>MarusiaServlet1</servlet-name>
+        <servlet-name>MarusiaServlet</servlet-name>
         <url-pattern>/marusia</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
-        <servlet-name>MarusiaServlet1</servlet-name>
+        <servlet-name>MarusiaServlet</servlet-name>
         <url-pattern>/marusia/sole</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>MarusiaServlet</servlet-name>
+        <url-pattern>/marusia/speaker</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>MarusiaServlet</servlet-name>
+        <url-pattern>/marusia/sessions</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>MarusiaTestServlet</servlet-name>

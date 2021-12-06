@@ -3,8 +3,8 @@ package net.leksi.sea_battle;
 public class MarusiaPhrases {
     static final String TXT_SO_LONG = "До встречи! ";
     static final String TTS_SO_LONG = "до встречи! -- ";
-    static final String TXT_DONT_UNDERSTAND = "Не поняла Вас! ";
-    static final String TTS_DONT_UNDERSTAND = "не поняла вас! -- ";
+    static final String TXT_DONT_UNDERSTAND = "Прошу прощения, не поняла вас! ";
+    static final String TTS_DONT_UNDERSTAND = "прошу прощения -- не поняла вас! -- ";
     static final String TXT_GAME_LEFT = "Наша игра не была закончена. ";
     static final String TTS_GAME_LEFT = "наша игра не была закончена. -- ";
     static final String TXT_GAME_TYPE = "Выберите, как будем играть. ";
@@ -21,9 +21,9 @@ public class MarusiaPhrases {
     static final String TTS_YOUR_MOVE = " -- ваш ход. -- ";
     static final String TXT_YOU_MISSED_MAP = "Вы не попали по карте.";
     static final String TTS_YOU_MISSED_MAP = "вы не попали по ^карте^. ---- ";
-    static final String TXT_YOU_WIN = "Поздравляю, Вы победили!";
+    static final String TXT_YOU_WIN = "Поздравляю, вы победили!";
     static final String TTS_YOU_WIN = " -- ^поздравляю^ -- вы победили! -- ";
-    static final String TXT_YOU_LOOSE = "К сожалению Вы проиграли.";
+    static final String TXT_YOU_LOOSE = "К сожалению вы проиграли.";
     static final String TTS_YOU_LOOSE = " -- к ^сожалению^ вы проиграли. -- ";
     static final String TXT_DRAW = "Ничья.";
     static final String TTS_DRAW = "-- ничья --";
@@ -35,33 +35,27 @@ public class MarusiaPhrases {
     static final String TTS_INJURED = " -- подбит. ------ ";
     static final String TXT_KILLED = "Потоплен. ";
     static final String TTS_KILLED = " -- потоплен. ------ ";
-    static final String TXT_DO_ANSWER = "Я жду ответ на мой выстрел.";
+    static final String TXT_DO_ANSWER = "Я жду ответ на мой выстрел. ";
     static final String TTS_DO_ANSWER = "-- я жду ответ на мой ^выстрел^. -- ";
-    static final String TXT_FAILED = "Вы дали ложный ответ или Ваши корабли расставлены не по правилам.";
-    static final String TTS_FAILED = " -- вы дали ложный ответ -- или Ваши корабли расставлены не по правилам. -- ";
+    static final String TXT_FAILED = "Так-так, что-то я запуталась! Или ваши корабли расставлены не по правилам, или вы сказали неправильный ответ…";
+    static final String TTS_FAILED = "-- так ^так^ -- что то я запуталась! -- или ваши корабли расставлены не по ^правилам^ -- или вы сказали неправильный ответ";
+    static final String TXT_RULES_HELP = "Скажите \"Играем\", чтобы перейти к игре или \"Дальше\", чтобы прослушать следующий раздел правил.";
+    static final String TTS_RULES_HELP = "-- Скажите ^играем^ -- чтобы перейти к игре или ^дальше^ -- чтобы прослушать следующий раздел правил. --";
+    static final String TXT_RULES_END = "Чтобы сейчас начать играть, скажите \"Играем\"!";
+    static final String TTS_RULES_END = "-- чтобы сейчас начать ^играть^ -- скажите ^играем^! --";
+    static final String TXT_WAIT_ANSWER_HELP = "Скажите \"Мимо\", \"Подбит\" или \"Потоплен\".";
+    static final String TTS_WAIT_ANSWER_HELP = "-- скажите ^мимо^ -- ^подбит^ -- или ^потоплен^ --";
+    static final String TXT_WAIT_READY_HELP = "Скажите \"Готов\" или \"Готова\", когда расставите корабли.";
+    static final String TTS_WAIT_READY_HELP = "-- скажите гот^ов или гот^ова -- когда расставите корабли";
+    static final String TXT_PLAY_AGAIN = "Давайте сыграем сначала?";
+    static final String TTS_PLAY_AGAIN = " -- давайте сыграем сначала! --";
+    static final String TXT_WAIT_SHOOT_HELP = "Назовите координаты точки, в которую вы целитесь.";
+    static final String TTS_WAIT_SHOOT_HELP = "-- назовите координаты точки -- в которую вы целитесь --";
+    static final String TXT_RULES_OR_PLAY = "\"Играем\" или слушаем правила \"Дальше\"?";
+    static final String TTS_RULES_OR_PLAY = "-- ^играем^ или слушаем правила ^дальше^ ? --";
+    static final String TXT_GAME_LEFT_HELP = "Скажите \"Продолжим\" или \"Заново\". ";
+    static final String TTS_GAME_LEFT_HELP = "-- скажите ^продолжим^ или ^заново^  -- ";
+    static final String TXT_WAIT_TYPE_HELP = "Скажите \"По очереди\" или \"Только Маруся\", или \"Только я\".";
+    static final String TTS_WAIT_TYPE_HELP = "-- скажите по ^очереди^ или ^только маруся^ или ^только я^ -- ";
 
-    static String[] get_phrase(int pos) {
-        String[][] all = new String[][]{
-                new String[]{TXT_SO_LONG, TTS_SO_LONG},
-                new String[]{TXT_DONT_UNDERSTAND, TTS_DONT_UNDERSTAND},
-                new String[]{TXT_GAME_LEFT, TTS_GAME_LEFT},
-                new String[]{TXT_GAME_TYPE, TTS_GAME_TYPE},
-                new String[]{TXT_PLACE_SHIPS, TTS_PLACE_SHIPS},
-                new String[]{TXT_START_GAME, TTS_START_GAME},
-                new String[]{TXT_PLACE_SHIPS_AND_START_GAME, TTS_PLACE_SHIPS_AND_START_GAME},
-                new String[]{TXT_MY_MOVE, TTS_MY_MOVE},
-                new String[]{TXT_YOUR_MOVE, TTS_YOUR_MOVE},
-                new String[]{TXT_YOU_MISSED_MAP, TTS_YOU_MISSED_MAP},
-                new String[]{TXT_YOU_WIN, TTS_YOU_WIN},
-                new String[]{TXT_YOU_LOOSE, TTS_YOU_LOOSE},
-                new String[]{TXT_DRAW, TTS_DRAW},
-                new String[]{TXT_GAME_OVER, TTS_GAME_OVER},
-                new String[]{TXT_MISSED, TTS_MISSED},
-                new String[]{TXT_INJURED, TTS_INJURED},
-                new String[]{TXT_KILLED, TTS_KILLED},
-                new String[]{TXT_DO_ANSWER, TTS_DO_ANSWER},
-                new String[]{TXT_FAILED, TTS_FAILED},
-        };
-        return all[pos % all.length];
-    }
 }

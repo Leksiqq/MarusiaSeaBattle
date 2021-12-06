@@ -9,43 +9,32 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static net.leksi.sea_battle.MarusiaCommands.*;
+import static net.leksi.sea_battle.MarusiaPatterns.*;
+import static net.leksi.sea_battle.MarusiaPhrases.*;
+import static net.leksi.sea_battle.MarusiaStage.*;
+
 public class MarusiaServlet extends HttpServlet {
-    static final TreeMap<String, MarusiaSession> sessions = new TreeMap<>();
-    static final TreeMap<String, Integer> numericals = new TreeMap<>() {{
-        put("один", 0);
-        put("два", 1);
-        put("три", 2);
-        put("четыре", 3);
-        put("пять", 4);
-        put("шесть", 5);
-        put("семь", 6);
-        put("восемь", 7);
-        put("девять", 8);
-        put("десять", 9);
-    }};
-    static final TreeMap<String, Integer> letters = new TreeMap<>() {{
-        put("а", 0);
-        put("б", 1);
-        put("в", 2);
-        put("г", 3);
-        put("д", 4);
-        put("е", 5);
-        put("ж", 6);
-        put("з", 7);
-        put("и", 8);
-        put("к", 9);
-    }};
-    static final List<String> letter_keys = letters.keySet().stream().collect(Collectors.toList());
-    static final List<String> numerical_keys = numericals.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getValue)).
-            map(v -> v.getKey()).collect(Collectors.toList());
-    static final double TANIMOTO_THRESHOLD = 0.6;
+    static private final Map<String, MarusiaSession> sessions = Collections.synchronizedMap(new TreeMap<>());
+
+    static private boolean expirator_working = false;
+    static private long prev_expirator_working_time = 0;
+    static private final long EXPIRATOR_PERIOD_SECS = 10;
+    static private final long EXPIRATION_TIME_SECS = 60;
+
+    static private String data_dir = null;
+
     static final int[] RULES_IMAGE_ID = new int[]{0, 457239019, 457239017};
+
+    static final String BUTTONS = "buttons";
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        check_data_dir(req);
         String ct = req.getHeader("content-type");
         String[] parts = ct.split(";");
         String charset = "utf-8";
@@ -60,400 +49,566 @@ public class MarusiaServlet extends HttpServlet {
             }
         }
         String content = null;
+        JSONObject jo = null;
+        JSONObject session = null;
+        JSONObject request = null;
+        boolean sole = false;
+        boolean speaker = false;
+        String user_id = null;
+        InputHolder input = null;
+        boolean session_new = true;
+        int message_id;
         try (
                 InputStreamReader isr = new InputStreamReader(req.getInputStream(), charset.toUpperCase());
                 BufferedReader br = new BufferedReader(isr)
         ) {
             content = br.lines().collect(Collectors.joining("\n"));
+            jo = new JSONObject(content);
+            session = (JSONObject) jo.get("session");
+            JSONObject fin_req = request = (JSONObject) jo.get("request");
+            sole = req.getRequestURI().contains("/sole");
+            speaker = req.getRequestURI().contains("/speaker") || session.getJSONObject("application").getString("application_type").equals("speaker");
+            user_id = sole ? "sole" : session.getString("user_id");
+            message_id = session.getInt("message_id");
+            input = new InputHolder() {
+                {
+                    tokens = fin_req.getJSONObject("nlu").getJSONArray("tokens").toList().stream().toArray(String[]::new);
+                    command = fin_req.getString("command");
+                    ou = fin_req.getString("original_utterance");
+                    payload = fin_req.getString("type").equals("ButtonPressed") && fin_req.has("payload") ?
+                            fin_req.getJSONObject("payload").getString("data") : null;
+                }
+            };
+            session_new = session.getBoolean("new");
+        } catch (Exception ex) {
+            resp.setStatus(500);
+            resp.getWriter().println("Request failed");
+            ex.printStackTrace(resp.getWriter());
+            resp.getWriter().println("content: " + content);
+            return;
         }
-        JSONObject jo = new JSONObject(content);
-        SeaBattleProcessor proc = null;
-        TanimotoComparator cmp = null;
-        JSONObject session = (JSONObject) jo.get("session");
-        JSONObject request = (JSONObject) jo.get("request");
-        JSONObject meta = (JSONObject) jo.get("meta");
-        boolean sole = req.getRequestURI().contains("/sole");
-        String sessiond_id = sole ? "sole" : session.getString("session_id");
-        String user_id = sole ? "sole" : session.getString("user_id");
-        InputHolder input = new InputHolder() {
-            {
-                tokens = request.getJSONObject("nlu").getJSONArray("tokens").toList().stream().toArray(String[]::new);
-                command = request.getString("command");
-                ou = request.getString("original_utterance");
-                payload = request.getString("type").equals("ButtonPressed") && request.has("payload") ?
-                        request.getJSONObject("payload").getString("data") : null;
-            }
-        };
         MarusiaSession ms = sessions.getOrDefault(user_id, null);
-        boolean session_new = session.getBoolean("new");
-        boolean continue_game = session_new && ms != null;
-        if (ms == null) {
-            session_new = true;
-            proc = new SeaBattleProcessor();
-            cmp = new TanimotoComparator();
-            ms = new MarusiaSession();
-            ms.processor = proc;
-            ms.comparator = cmp;
-            sessions.put(user_id, ms);
-        } else {
-            proc = ms.processor;
-            cmp = ms.comparator;
+        if(session_new) {
+            if(ms != null) {
+                if (ms.stage == WAIT_ENEMY_SHOOT || ms.stage == WAIT_ENEMY_ANSWER || ms.stage == WAIT_ENEMY_READY) {
+                    ms.wait_continue_or_new = true;
+                    ms.rules_part = 1;
+                } else {
+                    ms.processor.reset(EnumSet.noneOf(PlayerType.class));
+                    ms.last_response = null;
+                    ms.repeat_response = null;
+                    ms.stage = NEW;
+                    ms.wait_continue_or_new = false;
+                    ms.rules_part = 0;
+                }
+                ms.in_rules = false;
+            }
         }
         JSONObject jo1 = new JSONObject();
         JSONObject response = new JSONObject();
-        response.put("buttons", new JSONArray());
+        if(!speaker) {
+            response.put(BUTTONS, new JSONArray());
+        }
 
         response.put("end_session", false);
 
-        getServletContext().log(request.toString() + ", " + user_id + ", " + session_new);
+        int[] me_shoot = new int[2];
+        int[] enemy_shoot = new int[2];
 
-        int[] me_shoot = new int[]{-1, -1};
-        int[] enemy_shoot = new int[]{-1, -1};
+        long now = new Date().getTime();
 
-        if ("on_interrupt".equals(input.command)) {
-            getServletContext().log("1");
-            response.put("text", "До встречи!");
-            response.put("end_session", true);
-        } else if (continue_game) {
-            getServletContext().log("2");
-            continue_game_response(response);
-        } else if (session_new || command_is_rules(input, cmp)) {
-            getServletContext().log("3");
-            rules_response(response, ms, false);
-        } else if (command_is_new_game(input, cmp)) {
-            getServletContext().log("4");
-            sessions.remove(user_id);
-            proc = new SeaBattleProcessor();
-            cmp = new TanimotoComparator();
-            ms = new MarusiaSession();
-            ms.processor = proc;
-            ms.comparator = cmp;
-            sessions.put(user_id, ms);
-            rules_response(response, ms, false);
-        } else if (command_is_play(input, cmp)) {
-            getServletContext().log("5");
-            if (ms.last_response != null) {
-                getServletContext().log("5.1");
-                response = ms.last_response;
-            } else if (proc.getState().state() == State.WAIT_RESET) {
-                getServletContext().log("5.2");
-                what_way_response(response);
-            } else if (!proc.getState().isOutOfGame() && (proc.getState().state() == State.WAIT_FIRST_SHOOT ||
-                    proc.getState().state() == State.WAIT_ME_SHOOT)) {
-                getServletContext().log("5.3");
-                proc.my_shoot(me_shoot);
-            } else {
-                getServletContext().log("5.4");
-                dont_understand_response(input.ou, response);
+        boolean wait_continue_or_new = ms != null && ms.wait_continue_or_new;
+
+        do {
+
+            if (ms == null) {
+                session_new = true;
+                ms = new MarusiaSession();
+                ms.user_id = user_id;
+                ms.speaker = speaker;
+                ms.processor = new SeaBattleProcessor();
             }
-        } else if (command_is_ready(input, cmp)) {
-            getServletContext().log("7");
-            if (!proc.getState().isOutOfGame() && (proc.getState().state() == State.WAIT_FIRST_SHOOT ||
-                    proc.getState().state() == State.WAIT_ME_SHOOT)) {
-                getServletContext().log("7.1");
-                proc.my_shoot(me_shoot);
-            } else {
-                getServletContext().log("7.2");
-                dont_understand_response(input.ou, response);
+
+            synchronized (ms) {
+                ms.timestamp = now;
             }
-        } else if(ms.in_rules) {
-            dont_understand_response(input.ou, response);
-            rules_response(response, ms, true);
-        } else {
-            getServletContext().log("6");
-            getServletContext().log(input.toString());
-            ms.rules_part = 1;
-            ms.in_rules = false;
-            if (proc.getState().state() == State.WAIT_RESET) {
-                getServletContext().log("6.1");
-                String command = command_as_player(input, cmp);
+
+            boolean in_rules = ms.in_rules;
+
+            if ("on_interrupt".equals(input.command)) {
+                add_to_response(TXT_SO_LONG, false, TTS_SO_LONG, response);
+                response.put("end_session", true);
+                sessions.remove(user_id);
+                MarusiaSession ms1 = ms;
+                new Thread(() -> archive_session(ms1)).start();
+                ms = null;
+                break;
+            }
+            if (session_new && !ms.wait_continue_or_new || command_is_rules(input, ms)) {
+                rules_response(response, ms, false, speaker);
+                if(speaker) {
+                    if(ms.rules_part != -1) {
+                        rules_or_play_response(response, true, speaker);
+                    } else {
+                        in_rules_end_response(response, true, speaker);
+                    }
+                }
+                if(ms.rules_part == -1) {
+                    ms.rules_part = 1;
+                }
+                break;
+            }
+            if(command_is_repeat(input, ms) && ms.repeat_response != null) {
+                response = ms.repeat_response;
+                break;
+            }
+            if(command_is_help(input, ms)) {
+                if(in_rules) {
+                    in_rules_help_response(response, false, speaker);
+                    break;
+                }
+                if(ms.wait_continue_or_new) {
+                    wait_continue_or_new_help_response(response, false, speaker);
+                    break;
+                }
+                if(ms.stage == WAIT_ENEMY_ANSWER) {
+                    wait_answer_help_response(response, false, speaker);
+                    break;
+                }
+                if(ms.stage == WAIT_ENEMY_SHOOT) {
+                    wait_shoot_help_response(response, false, speaker);
+                    break;
+                }
+                if(ms.stage == WAIT_ENEMY_READY) {
+                    wait_ready_help_response(response, false, speaker);
+                    break;
+                }
+                if(ms.stage == WAIT_TYPE) {
+                    wait_type_help_response(response, false, speaker);
+                    break;
+                }
+            }
+            if(command_is_new_game(input, ms)) {
+                wait_continue_or_new = false;
+                ms.processor.reset(EnumSet.noneOf(PlayerType.class));
+                ms.last_response = null;
+                ms.repeat_response = null;
+                ms.stage = NEW;
+                ms.wait_continue_or_new = false;
+                ms.in_rules = false;
+                ms.rules_part = 0;
+            }
+            if (in_rules) {
+                if (command_is_play(input, ms)) {
+                    in_rules = ms.in_rules = false;
+                    ms.rules_part = 1;
+                    if(ms.stage == WAIT_ENEMY_ANSWER && ms.last_response != null) {
+                        response = ms.last_response;
+                        break;
+                    }
+                    if(ms.stage == WAIT_ENEMY_SHOOT && ms.last_response != null) {
+                        response = ms.last_response;
+                        break;
+                    }
+
+                } else {
+                    dont_understand_response(response, speaker);
+                    if(!speaker) {
+                        rules_response(response, ms, !speaker, speaker);
+                    } else {
+                        in_rules_help_response(response, true, speaker);
+                    }
+                    break;
+                }
+            }
+            if (ms.wait_continue_or_new) {
+                if (session_new || in_rules) {
+                    continue_game_response(response, false, speaker);
+                    break;
+                }
+                if (command_is_continue(input, ms)) {
+                    ms.wait_continue_or_new = false;
+                } else {
+                    dont_understand_response(response, speaker);
+                    continue_game_response(response, true, speaker);
+                    break;
+                }
+            }
+
+            if(ms.stage == NEW) {
+                ms.stage = WAIT_TYPE;
+                what_way_response(response, speaker);
+                break;
+            }
+
+            if(ms.stage == WAIT_TYPE) {
+                String command = command_as_player(input, ms);
                 if (command.startsWith("player:")) {
-                    getServletContext().log("6.2");
                     EnumSet<PlayerType> set = EnumSet.noneOf(PlayerType.class);
                     switch (command) {
-                        case "player:both":
+                        case PAYLOAD_PLAYER_BOTH:
                             set.add(PlayerType.ME);
                             set.add(PlayerType.ENEMY);
+                            ms.both_started++;
                             break;
-                        case "player:enemy":
+                        case PAYLOAD_PLAYER_ENEMY:
                             set.add(PlayerType.ENEMY);
+                            ms.enemy_started++;
                             break;
-                        case "player:me":
+                        case PAYLOAD_PLAYER_ME:
                             set.add(PlayerType.ME);
+                            ms.me_started++;
                             break;
                     }
-                    proc.reset(set);
+                    ms.processor.reset(set);
                     if (set.size() == 1) {
                         if (set.stream().findAny().get() == PlayerType.ME) {
-                            say_when_ready_response(response);
-                        } else {
-                            start_response(response);
+                            say_when_ready_response(response, false, speaker);
+                            if(speaker) {
+                                wait_ready_help_response(response, true, speaker);
+                            }
+                            ms.stage = WAIT_ENEMY_READY;
+                            break;
                         }
-                    } else {
-                        start_when_ready_response(response);
+                        start_response(response, speaker);
+                        ms.stage = WAIT_ENEMY_SHOOT;
+                        break;
                     }
-                } else {
-                    getServletContext().log("6.3");
-                    dont_understand_response(input.ou, response);
-                    what_way_response(response);
+                    start_when_ready_response(response, speaker);
+                    ms.stage = WAIT_ENEMY_SHOOT;
+                    break;
                 }
-            } else if (!proc.getState().isOutOfGame()) {
-                getServletContext().log("6.4");
-                if (proc.getState().state() == State.WAIT_FIRST_SHOOT || proc.getState().state() == State.WAIT_ENEMY_SHOOT) {
-                    getServletContext().log("6.5");
-                    String command = command_as_shoot(input, cmp, enemy_shoot);
-                    getServletContext().log(command + ", " + Arrays.toString(enemy_shoot));
+                if(!in_rules) {
+                    dont_understand_response(response, speaker);
+                }
+                what_way_response(response, speaker);
+                break;
+            }
+
+            if(in_rules) {
+                if(ms.last_response != null) {
+                    response = ms.last_response;
+                }
+                break;
+            }
+
+            if(ms.stage == WAIT_ENEMY_SHOOT) {
+                if(wait_continue_or_new && ms.last_response != null) {
+                    response = ms.last_response;
+                } else {
+                    String command = command_as_shoot(input, enemy_shoot, getServletContext());
                     if (command.equals("shoot")) {
-                        ResultType res = proc.enemy_shoot(enemy_shoot);
+                        ResultType res = ms.processor.enemy_shoot(enemy_shoot);
                         if (res == ResultType.MISSED || res == ResultType.INJURED || res == ResultType.KILLED) {
-                            getServletContext().log("6.6");
-                            shoot_response(enemy_shoot, false, false, response);
+                            shoot_response(enemy_shoot, false, false, response, speaker);
                             switch (res) {
                                 case MISSED:
-                                    missed_response(response);
+                                    missed_response(response, speaker);
                                     break;
                                 case INJURED:
-                                    injured_response(response);
+                                    injured_response(response, speaker);
                                     break;
                                 case KILLED:
-                                    killed_response(response);
+                                    killed_response(response, speaker);
                                     break;
                             }
-                            if (!proc.getState().isOutOfGame()) {
-                                if (proc.getSet().size() == 2 && proc.getState().state() == State.WAIT_ME_SHOOT) {
-                                    proc.my_shoot(me_shoot);
-                                } else {
-                                    enemy_move(response);
+                            if (!ms.processor.getState().isOutOfGame()) {
+                                if (ms.processor.getSet().size() == 2 && ms.processor.getState().state() == State.WAIT_ME_SHOOT) {
+                                    ms.stage = WAIT_ME_SHOOT;
+                                    ms.last_response = response;
+                                    continue;
                                 }
+                                enemy_move_response(response, speaker);
+                                ms.last_response = response;
+                                break;
                             }
-                        } else {
-                            getServletContext().log("6.7");
-                            milk_shoot_response(input.ou, response);
-                            enemy_move(response);
                         }
-                    } else {
-                        getServletContext().log("6.8");
-                        milk_shoot_response(input.ou, response);
-                        enemy_move(response);
+                    }
+                    if (!ms.processor.getState().isOutOfGame()) {
+                        milk_shoot_response(input.ou, response, speaker);
+                        enemy_move_response(response, speaker);
+                        ms.last_response = response;
+                        break;
+                    }
+                }
+            }
+
+            if(ms.stage == WAIT_ENEMY_READY || ms.stage == WAIT_ME_SHOOT) {
+                if(wait_continue_or_new) {
+                    if(ms.stage == WAIT_ENEMY_READY) {
+                        say_when_ready_response(response, false, speaker);
+                        if(speaker) {
+                            wait_ready_help_response(response, true, speaker);
+                        }
+                        break;
                     }
                 } else {
-                    getServletContext().log("6.9");
-                    String command = command_as_answer(input, cmp);
+                    if (ms.stage == WAIT_ENEMY_READY && !command_is_ready(input, ms)) {
+                        dont_understand_response(response, speaker);
+                        say_when_ready_response(response, true, speaker);
+                        if (speaker) {
+                            wait_ready_help_response(response, true, speaker);
+                        }
+                        break;
+                    }
+                    me_shoot[0] = me_shoot[1] = -1;
+                    ResultType res = ms.processor.my_shoot(me_shoot);
+                    if (res == ResultType.OK) {
+                        shoot_response(me_shoot, true, true, response, speaker);
+                        ms.last_response = response;
+                        ms.stage = WAIT_ENEMY_ANSWER;
+                        break;
+                    }
+                }
+            }
+
+            if(ms.stage == WAIT_ENEMY_ANSWER) {
+                if(wait_continue_or_new && ms.last_response != null) {
+                    response = ms.last_response;
+                } else {
+                    String command = command_as_answer(input, ms);
                     if (command.startsWith("answer:")) {
-                        getServletContext().log("6.10");
                         ResultType answer = ResultType.OK;
                         switch (command) {
-                            case "answer:missed":
+                            case PAYLOAD_ANSWER_MISSED:
                                 answer = ResultType.MISSED;
                                 break;
-                            case "answer:injured":
+                            case PAYLOAD_ANSWER_INJURED:
                                 answer = ResultType.INJURED;
                                 break;
-                            case "answer:killed":
+                            case PAYLOAD_ANSWER_KILLED:
                                 answer = ResultType.KILLED;
                                 break;
                         }
-                        ResultType res = proc.enemy_answer(answer);
-                        if (res == ResultType.OK && !proc.getState().isOutOfGame()) {
-                            if (proc.getSet().size() == 2 && proc.getState().state() == State.WAIT_ENEMY_SHOOT) {
-                                enemy_move(response);
-                            } else {
-                                proc.my_shoot(me_shoot);
+                        if (answer != ResultType.OK) {
+                            ResultType res = ms.processor.enemy_answer(answer);
+                            if (res == ResultType.OK && !ms.processor.getState().isOutOfGame()) {
+                                if (ms.processor.getSet().size() == 2 && ms.processor.getState().state() == State.WAIT_ENEMY_SHOOT) {
+                                    enemy_move_response(response, speaker);
+                                    ms.last_response = response;
+                                    ms.stage = WAIT_ENEMY_SHOOT;
+                                } else {
+                                    ms.stage = WAIT_ME_SHOOT;
+                                    continue;
+                                }
                             }
                         }
                     } else {
-                        getServletContext().log("6.11");
-                        if (proc.remind_me_last_shoot(me_shoot) == ResultType.OK) {
-                            answer_to_my_shoot_response(response);
+                        if (ms.processor.remind_me_last_shoot(me_shoot) == ResultType.OK) {
+                            answer_to_my_shoot_response(response, speaker);
+                            wait_answer_help_response(response, true, speaker);
                         } else {
-                            dont_understand_response(input.ou, response);
+                            dont_understand_response(response, speaker);
                         }
                     }
-                }
-                if (proc.getState().isOutOfGame()) {
-                    getServletContext().log("6.12");
-                    if (proc.getState().state() == State.OVER) {
-                        if (proc.getSet().size() == 2) {
-                            int my_killed = proc.getStat(PlayerType.ME).killed;
-                            int enemy_killed = proc.getStat(PlayerType.ENEMY).killed;
-                            if (my_killed > enemy_killed) {
-                                add_to_response("Вы проиграли", true, null, response);
-                            } else if (my_killed < enemy_killed) {
-                                add_to_response("Вы победили!", true, null, response);
-                            } else {
-                                add_to_response("Ничья.", true, null, response);
-                            }
-                        } else {
-                            add_to_response("Игра окончена.", true, null, response);
-                        }
-                    } else if (proc.getState().state() == State.FAILED) {
-                        add_to_response("Вы дали ложный ответ или Ваши корабли расставлены не по правилам.",
-                                false, null, response);
-                        if (proc.getSet().size() == 2) {
-                            add_to_response("Вы проиграли.",
-                                    true, null, response);
-                        } else {
-                            add_to_response("Игра окончена.",
-                                    true, null, response);
-                        }
-                    }
-                    response.put("end_session", true);
-                    ms.last_response = null;
                 }
             }
-        }
 
-        if (response.getBoolean("end_session")) {
-            sessions.remove(user_id);
-        } else {
-            if (me_shoot[0] != -1) {
-                shoot_response(me_shoot, true, true, response);
+            if(ms.processor.getState().isOutOfGame()) {
+                if (ms.processor.getState().state() == State.OVER) {
+                    if (ms.processor.getSet().size() == 2) {
+                        int my_killed = ms.processor.getStat(PlayerType.ME).killed;
+                        int enemy_killed = ms.processor.getStat(PlayerType.ENEMY).killed;
+                        if (my_killed > enemy_killed) {
+                            add_to_response(TXT_YOU_LOOSE, true, TTS_YOU_LOOSE, response);
+                            ms.both_lost++;
+                        } else if (my_killed < enemy_killed) {
+                            add_to_response(TXT_YOU_WIN, true, TTS_YOU_WIN, response);
+                            ms.both_winned++;
+                        }
+                    } else {
+                        add_to_response(TXT_GAME_OVER, true, TTS_GAME_OVER, response);
+                        if(ms.processor.getSet().contains(PlayerType.ME)) {
+                            ms.me_finished++;
+                        } else {
+                            ms.enemy_finished++;
+                        }
+                    }
+                } else if (ms.processor.getState().state() == State.FAILED) {
+                    add_to_response(TXT_FAILED, true, TTS_FAILED, response);
+                    if (ms.processor.getSet().size() == 2) {
+                        ms.both_failed++;
+                    } else {
+                        if(ms.processor.getSet().contains(PlayerType.ME)) {
+                            ms.me_failed++;
+                        } else {
+                            ms.enemy_failed++;
+                        }
+                    }
+                }
+                add_to_response(TXT_PLAY_AGAIN, true, TTS_PLAY_AGAIN, response);
+                ms.stage = NEW;
+                break;
             }
+
+
+            break;
+        } while (true);
+
+        if (!response.getBoolean("end_session")) {
             if (!ms.in_rules) {
-                ms.last_response = response;
             }
         }
         jo1.put("response", response);
+        if(ms != null) {
+            ms.repeat_response = response;
+        }
         jo1.put("session", new JSONObject(session, "session_id", "user_id", "message_id"));
         jo1.put("version", jo.get("version"));
         String tmp = jo1.toString();
 
+        resp.setContentType("application/json");
+        resp.setCharacterEncoding("UTF-8");
         resp.setStatus(200);
         resp.getWriter().println(tmp);
-    }
 
-    private void milk_shoot_response(String ou, JSONObject response) {
-        add_to_response("Вы не попали по карте.", true,
-                null, response);
-    }
-
-    private boolean command_is_new_game(InputHolder input, TanimotoComparator cmp) {
-        if (input.payload != null && input.payload.equals("new_game")) {
-            return true;
-        }
-        cmp.setPattern(input.tokens);
-        return (cmp.get_score("заново") > TANIMOTO_THRESHOLD || cmp.get_score("новая") > TANIMOTO_THRESHOLD);
-    }
-
-    private void continue_game_response(JSONObject response) {
-        add_to_response("Наша игра не была закончена.", true,
-                null, response);
-        response.getJSONArray("buttons").put(create_button("Продолжить", "ready"));
-        response.getJSONArray("buttons").put(create_button("Начать заново", "new_game"));
-    }
-
-    private String command_as_answer(InputHolder input, TanimotoComparator cmp) {
-        if (input.payload != null && input.payload.startsWith("answer:")) {
-            return input.payload;
-        }
-        cmp.setPattern(input.tokens);
-        getServletContext().log("мимо: " + cmp.get_score("мимо"));
-        getServletContext().log("подбит: " + cmp.get_score("подбит"));
-        getServletContext().log("потоп: " + cmp.get_score("потоп"));
-        if (cmp.get_score("мимо") > TANIMOTO_THRESHOLD) {
-            return "answer:missed";
-        }
-        if (cmp.get_score("подбит") > TANIMOTO_THRESHOLD) {
-            return "answer:injured";
-        }
-        if (cmp.get_score("потоп") > TANIMOTO_THRESHOLD) {
-            return "answer:killed";
-        }
-        return "";
-    }
-
-    private String command_as_shoot(InputHolder input, TanimotoComparator cmp, int[] shoot) {
-        shoot[0] = shoot[1] = -1;
-        String[] tmp = new String[2];
-        boolean found = false;
-        if (input.tokens.length == 2) {
-            tmp[0] = input.tokens[0].substring(0, 1);
-            tmp[1] = input.tokens[1];
-            found = true;
+        if(ms != null) {
+            sessions.put(user_id, ms);
         } else {
-            tmp[0] = input.tokens[0].substring(0, 1);
-            tmp[1] = input.tokens[0].substring(1);
-            found = true;
+            sessions.remove(user_id);
         }
-        if (found) {
-            if (letters.containsKey(tmp[0])) {
-                shoot[1] = letters.get(tmp[0]);
-                try {
-                    shoot[0] = Integer.parseInt(tmp[1]) - 1;
-                    if(shoot[0] < 0 || shoot[0] > 9) {
-                        shoot[1] = shoot[0] = -1;
-                    }
-                } catch (NumberFormatException ex) {
-                    if (numericals.containsKey(tmp[1])) {
-                        shoot[0] = numericals.get(tmp[1]);
-                    } else {
-                        shoot[1] = -1;
-                    }
-                }
+
+        synchronized (MainServlet.class) {
+            if(now - prev_expirator_working_time > EXPIRATOR_PERIOD_SECS * 1000 && !expirator_working) {
+                prev_expirator_working_time = now;
+                expirator_working = true;
+                new Thread(() -> expirator(now)).start();
             }
         }
-        return shoot[0] == -1 ? "milk" : "shoot";
+
     }
 
-    private String command_as_player(InputHolder input, TanimotoComparator cmp) {
-        if (input.payload != null && input.payload.startsWith("player:")) {
-            return input.payload;
-        }
-        if (input.tokens[0].equals("я") || input.tokens.length > 1 && input.tokens[1].equals("я")) {
-            return "player:enemy";
-        }
-        if (input.tokens[0].equals("маруся") || input.tokens.length > 1 && input.tokens[1].equals("маруся")) {
-            return "player:me";
-        }
-        cmp.setPattern(input.tokens);
-        if (cmp.get_score("очеред") > TANIMOTO_THRESHOLD) {
-            return "player:both";
-        }
-        return "";
+    private void wait_type_help_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_WAIT_TYPE_HELP, bubble, TTS_WAIT_TYPE_HELP, response);
     }
 
-    private boolean command_is_ready(InputHolder input, TanimotoComparator cmp) {
-        if (input.payload != null && input.payload.equals("ready")) {
-            return true;
+    private void wait_continue_or_new_help_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_GAME_LEFT_HELP, bubble, TTS_GAME_LEFT_HELP, response);
+    }
+
+    static private void expirator(long now) {
+        ArrayList<String> to_remove = new ArrayList<>();
+        sessions.forEach((k, v) -> {
+            if(now - v.timestamp > EXPIRATION_TIME_SECS * 1000) {
+                v.timestamp = now;
+                to_remove.add(k);
+            }
+        });
+        if(!to_remove.isEmpty()) {
+            try(
+                    FileWriter fr = new FileWriter(Paths.get(data_dir, "stat.txt").toString(), true);
+                    PrintWriter pw = new PrintWriter(fr);
+                    ) {
+                to_remove.forEach(k -> {
+                    pw.println("=============================");
+                    pw.print(sessions.get(k).getStat());
+                    sessions.remove(k);
+                });
+            } catch (IOException e) { }
+            to_remove.forEach(k -> sessions.remove(k));
         }
-        cmp.setPattern(input.tokens);
-        return (cmp.get_score("готов") > TANIMOTO_THRESHOLD);
-    }
-
-    private boolean command_is_play(InputHolder input, TanimotoComparator cmp) {
-        if (input.payload != null && input.payload.equals("play")) {
-            return true;
+        synchronized (MainServlet.class) {
+            expirator_working = false;
         }
-        cmp.setPattern(input.tokens);
-        return (cmp.get_score("продолжить") > TANIMOTO_THRESHOLD ||
-                cmp.get_score("играть") > TANIMOTO_THRESHOLD ||
-                cmp.get_score("играем") > TANIMOTO_THRESHOLD);
     }
 
-    private boolean command_is_rules(InputHolder input, TanimotoComparator cmp) {
-        if (input.payload != null && input.payload.equals("rules")) {
-            return true;
+    static private void archive_session(MarusiaSession session) {
+        try(
+                FileWriter fr = new FileWriter(Paths.get(data_dir, "stat.txt").toString(), true);
+                PrintWriter pw = new PrintWriter(fr);
+        ) {
+            pw.println("=============================");
+            pw.print(session.getStat());
+        } catch (IOException e) { }
+    }
+
+    private void rules_or_play_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_RULES_OR_PLAY, bubble, TTS_RULES_OR_PLAY, response);
+    }
+
+    private void wait_shoot_help_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_WAIT_SHOOT_HELP, bubble, TTS_WAIT_SHOOT_HELP, response);
+    }
+
+    private void wait_ready_help_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_WAIT_READY_HELP, bubble, TTS_WAIT_READY_HELP, response);
+    }
+
+    private void wait_answer_help_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_WAIT_ANSWER_HELP, bubble, TTS_WAIT_ANSWER_HELP, response);
+    }
+
+    private void in_rules_end_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_RULES_END, bubble, TTS_RULES_END, response);
+    }
+
+    private void in_rules_help_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_RULES_HELP, bubble, TTS_RULES_HELP, response);
+    }
+
+    private void answer_to_my_shoot_response(JSONObject response, boolean speaker) {
+        add_to_response(TXT_DO_ANSWER, false, TTS_DO_ANSWER, response);
+    }
+
+    private void killed_response(JSONObject response, boolean speaker) {
+        add_to_response(": " + TXT_KILLED, false, TTS_KILLED, response);
+    }
+
+    private void injured_response(JSONObject response, boolean speaker) {
+        add_to_response(": " + TXT_INJURED, false, TTS_INJURED, response);
+    }
+
+    private void missed_response(JSONObject response, boolean speaker) {
+        add_to_response(": " + TXT_MISSED, false, TTS_MISSED, response);
+    }
+
+    private void milk_shoot_response(String ou, JSONObject response, boolean speaker) {
+        add_to_response(TXT_YOU_MISSED_MAP, true,
+                TTS_YOU_MISSED_MAP, response);
+    }
+
+    private void enemy_move_response(JSONObject response, boolean speaker) {
+        add_to_response(TXT_YOUR_MOVE, true, TTS_YOUR_MOVE, response);
+    }
+
+    private void shoot_response(int[] shoot, boolean bubble, boolean with_buttons, JSONObject response, boolean speaker) {
+        String text = letter_keys.get(shoot[1]).toUpperCase() + " " + (shoot[0] + 1);
+        String tts = "^«" + letter_names.get(shoot[1]) + "»^ -- ^" + numerical_keys.get(shoot[0]) + "^. -- ";
+        add_to_response((with_buttons ? TXT_MY_MOVE : "") + text, bubble, (with_buttons ? TTS_MY_MOVE : "" ) + tts, response);
+        if (with_buttons) {
+            create_button(PATTERN_MISSED[0], PAYLOAD_ANSWER_MISSED, response);
+            create_button(PATTERN_INJURED[0], PAYLOAD_ANSWER_INJURED, response);
+            create_button(PATTERN_KILLED[0], PAYLOAD_ANSWER_KILLED, response);
         }
-        cmp.setPattern(input.tokens);
-        return (cmp.get_score("правила") > TANIMOTO_THRESHOLD || cmp.get_score("дальше") > TANIMOTO_THRESHOLD);
     }
 
-    private void answer_to_my_shoot_response(JSONObject response) {
-        add_to_response("Вы не ответили!", false, null, response);
+    private void start_when_ready_response(JSONObject response, boolean speaker) {
+        add_to_response(TXT_PLACE_SHIPS_AND_START_GAME, false, TTS_PLACE_SHIPS_AND_START_GAME, response);
     }
 
-    private void say_when_ready_response(JSONObject response) {
-        add_to_response("Расставляйте корабли.", false, null, response);
-        response.getJSONArray("buttons").put(create_button("Готов", "ready"));
+    private void start_response(JSONObject response, boolean speaker) {
+        add_to_response(TXT_START_GAME, false, TTS_START_GAME, response);
     }
 
-    private void rules_response(JSONObject response, MarusiaSession ms, boolean buttons_only) {
-        ms.in_rules = true;
+    private void continue_game_response(JSONObject response, boolean buttons_only, boolean speaker) {
         if(!buttons_only) {
+            add_to_response(TXT_GAME_LEFT, true, TTS_GAME_LEFT +  " " + TTS_GAME_LEFT_HELP, response);
+        }
+        create_button(PATTERN_CONTINUE[0], PAYLOAD_READY, response);
+        create_button(PATTERN_NEW_GAME, PAYLOAD_NEW_GAME, response);
+    }
+
+    private void dont_understand_response(JSONObject response, boolean speaker) {
+        add_to_response(TXT_DONT_UNDERSTAND, false, TTS_DONT_UNDERSTAND, response);
+    }
+
+    private void rules_response(JSONObject response, MarusiaSession ms, boolean buttons_only, boolean speaker) {
+        ms.in_rules = true;
+        if (!buttons_only) {
             String text = read_file("rules." + ms.rules_part + ".txt");
             String tts = read_file("rules." + ms.rules_part + ".tts");
             add_to_response(text, false, tts, response);
-            if (RULES_IMAGE_ID.length > ms.rules_part && RULES_IMAGE_ID[ms.rules_part] != 0) {
+            if (!speaker && RULES_IMAGE_ID.length > ms.rules_part && RULES_IMAGE_ID[ms.rules_part] != 0) {
                 response.put("card", new JSONObject() {{
                     put("type", "BigImage");
                     put("image_id", RULES_IMAGE_ID[ms.rules_part]);
@@ -462,11 +617,11 @@ public class MarusiaServlet extends HttpServlet {
             ms.rules_part++;
         }
         if (file_exists("rules." + ms.rules_part + ".txt")) {
-            response.getJSONArray("buttons").put(create_button("Дальше", "rules"));
+            create_button(PATTERN_FARTHER[0], PAYLOAD_RULES, response);
         } else {
-            ms.rules_part = 1;
+            ms.rules_part = -1;
         }
-        response.getJSONArray("buttons").put(create_button("Играем", "play"));
+        create_button(PATTERN_PLAY[0], PAYLOAD_PLAY, response);
     }
 
     private void add_to_response(String text, boolean bubble, String tts, JSONObject response) {
@@ -480,63 +635,6 @@ public class MarusiaServlet extends HttpServlet {
         if (tts != null && !tts.isBlank()) {
             response.put("tts", (response.has("tts") ? response.getString("tts") : "") + tts);
         }
-    }
-
-    private void killed_response(JSONObject response) {
-        add_to_response(": Потоплен. ", false, " -- потоплен. ", response);
-    }
-
-    private void injured_response(JSONObject response) {
-        add_to_response(": Подбит. ", false, " -- подбит. ", response);
-    }
-
-    private void missed_response(JSONObject response) {
-        add_to_response(": Мимо. ", false, " -- мимо. ", response);
-    }
-
-    private void shoot_response(int[] shoot, boolean bubble, boolean with_buttons, JSONObject response) {
-        String text = letter_keys.get(shoot[1]).toUpperCase() + " " + (shoot[0] + 1);
-        String tts = letter_keys.get(shoot[1]) + " " + numerical_keys.get(shoot[0]);
-        add_to_response((with_buttons ? "Мой ход: " : "") + text, bubble, (with_buttons ? "-- мой ход -- " : "" ) + tts, response);
-        if (with_buttons) {
-            response.getJSONArray("buttons").put(create_button("Мимо", "answer:missed"));
-            response.getJSONArray("buttons").put(create_button("Подбит", "answer:injured"));
-            response.getJSONArray("buttons").put(create_button("Потоплен", "answer:killed"));
-        }
-    }
-
-    private void start_response(JSONObject response) {
-        add_to_response("Начинайте игру.", false, null, response);
-    }
-
-    private void enemy_move(JSONObject response) {
-        add_to_response("Ваш ход.", true, "-- ваш ход", response);
-    }
-
-    private void start_when_ready_response(JSONObject response) {
-        add_to_response("Расставляйте корабли и делайте первый ход.", false, "расставляйте корабли -- и делайте первый ход.", response);
-    }
-
-    private void dont_understand_response(String command, JSONObject response) {
-        add_to_response("Не поняла Вас! ", false,
-                null, response);
-    }
-
-    private void what_way_response(JSONObject response) {
-        add_to_response("Выберите, как будем играть.", true,
-                null, response);
-        response.getJSONArray("buttons").put(create_button("По очереди", "player:both"));
-        response.getJSONArray("buttons").put(create_button("Только я", "player:enemy"));
-        response.getJSONArray("buttons").put(create_button("Только Маруся", "player:me"));
-    }
-
-    private JSONObject create_button(String title, Object payload) {
-        JSONObject res = new JSONObject();
-        res.put("title", title);
-        res.put("payload", new JSONObject() {{
-            put("data", payload);
-        }});
-        return res;
     }
 
     private boolean file_exists(String path) {
@@ -557,4 +655,68 @@ public class MarusiaServlet extends HttpServlet {
             return null;
         }
     }
+
+    private void create_button(String title, Object payload, JSONObject response) {
+        if(response.has(BUTTONS)) {
+            JSONObject res = new JSONObject();
+            res.put("title", title.substring(0, 1).toUpperCase() + title.substring(1));
+            res.put("payload", new JSONObject() {{
+                put("data", payload);
+            }});
+            response.getJSONArray(BUTTONS).put(res);
+        }
+    }
+
+    private void what_way_response(JSONObject response, boolean speaker) {
+        String[] text = read_file("what_way.txt").split("\\n");
+        String tts = read_file("what_way" + (speaker ? ".speaker" : "") + ".tts");
+        for(int i = 0; i < text.length; i++) {
+            add_to_response(text[i], i > 0, i == 0 ? tts : null, response);
+        }
+        create_button(PATTERN_BOTH, PAYLOAD_PLAYER_BOTH, response);
+        create_button(PATTERN_ENEMY[0], PAYLOAD_PLAYER_ENEMY, response);
+        create_button(PATTERN_ME[0], PAYLOAD_PLAYER_ME, response);
+    }
+
+    private void say_when_ready_response(JSONObject response, boolean bubble, boolean speaker) {
+        add_to_response(TXT_PLACE_SHIPS, bubble, TTS_PLACE_SHIPS, response);
+        create_button(PATTERN_READY[0], PAYLOAD_READY, response);
+    }
+
+
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        check_data_dir(req);
+        PrintWriter pw = resp.getWriter();
+        resp.setContentType("text/plain");
+        resp.setCharacterEncoding("UTF-8");
+        resp.setStatus(200);
+        if(req.getRequestURI().equals(req.getContextPath() + "/" + getServletContext().getInitParameter("marusia.sessions.path"))) {
+            int[] count = new int[1];
+            long now = new Date().getTime();
+            pw.println("Sessions");
+            sessions.forEach((k, v) -> {
+                pw.println("=============================");
+                pw.println("    stage: " + v.stage);
+                pw.println("    status: " + v.processor.getState().state());
+                pw.print("    " + v.getStat().replace("\n", "\n    "));
+                pw.println("" + (EXPIRATION_TIME_SECS * 1000 - now + v.timestamp) / 1000 + " sec. before expiration");
+                count[0]++;
+            });
+            pw.println("=============================");
+            pw.println("Total: " + count[0]);
+        } else {
+            pw.println("it works!");
+        }
+    }
+
+    private void check_data_dir(HttpServletRequest req) {
+        if (data_dir == null) {
+            synchronized (MarusiaServlet.class) {
+                if (data_dir == null) {
+                    data_dir = getServletContext().getRealPath(("/data"));
+                }
+            }
+        }
+    }
+
 }

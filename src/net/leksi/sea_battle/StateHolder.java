@@ -13,9 +13,7 @@ public class StateHolder {
         boolean done = false;
         switch (state) {
             case WAIT_RESET:
-                if(value == State.WAIT_FIRST_SHOOT || value == State.WAIT_ME_SHOOT || value == State.WAIT_ENEMY_SHOOT) {
-                    done = true;
-                }
+                done = true;
                 break;
             case WAIT_FIRST_SHOOT:
                 if(value == State.WAIT_ME_SHOOT || value == State.WAIT_ENEMY_SHOOT) {

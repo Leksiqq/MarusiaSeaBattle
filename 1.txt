@@ -1,0 +1,83 @@
+
+F:\leksi\Java\games\sea-battle-current>set APP=sea-battle-dev 
+
+F:\leksi\Java\games\sea-battle-current>set TARGET=C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev 
+
+F:\leksi\Java\games\sea-battle-current>del /F /Q "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev" 
+
+F:\leksi\Java\games\sea-battle-current>FOR / %p IN ("C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\*") DO echo "%p" 
+
+F:\leksi\Java\games\sea-battle-current>echo "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\META-INF" 
+"C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\META-INF"
+
+F:\leksi\Java\games\sea-battle-current>echo "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF" 
+"C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF"
+
+F:\leksi\Java\games\sea-battle-current>FOR / %p IN ("C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\*") DO rmdir "%p" /s /q 
+
+F:\leksi\Java\games\sea-battle-current>rmdir "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\META-INF" /s /q 
+
+F:\leksi\Java\games\sea-battle-current>rmdir "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF" /s /q 
+
+F:\leksi\Java\games\sea-battle-current>xcopy web\* /E /Y "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev" 
+web\3.css
+web\4.js
+web\index.jsp
+web\META-INF\context.xml
+web\WEB-INF\rules.0.tts
+web\WEB-INF\rules.0.txt
+web\WEB-INF\rules.1.tts
+web\WEB-INF\rules.1.txt
+web\WEB-INF\rules.2.tts
+web\WEB-INF\rules.2.txt
+web\WEB-INF\rules.3.tts
+web\WEB-INF\rules.3.txt
+web\WEB-INF\rules.4.tts
+web\WEB-INF\rules.4.txt
+web\WEB-INF\rules.5.tts
+web\WEB-INF\rules.5.txt
+web\WEB-INF\web.xml
+web\WEB-INF\what_way.speaker.tts
+web\WEB-INF\what_way.tts
+web\WEB-INF\what_way.txt
+web\WEB-INF\classes\net\leksi\sea_battle\Cell.class
+web\WEB-INF\classes\net\leksi\sea_battle\CellState.class
+web\WEB-INF\classes\net\leksi\sea_battle\InputHolder.class
+web\WEB-INF\classes\net\leksi\sea_battle\MainServlet.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$2.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$3.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$4.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$5.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaPatterns.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaPhrases.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$2.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$3.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$4.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaSession.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaStage.class
+web\WEB-INF\classes\net\leksi\sea_battle\MarusiaTestServlet.class
+web\WEB-INF\classes\net\leksi\sea_battle\PlayerHolder.class
+web\WEB-INF\classes\net\leksi\sea_battle\PlayerType.class
+web\WEB-INF\classes\net\leksi\sea_battle\ResultType.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$2$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$2.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$3$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$3.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$4.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessorTest$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessorTest$Cons.class
+web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessorTest.class
+web\WEB-INF\classes\net\leksi\sea_battle\Ship.class
+web\WEB-INF\classes\net\leksi\sea_battle\Stat.class
+web\WEB-INF\classes\net\leksi\sea_battle\State.class
+web\WEB-INF\classes\net\leksi\sea_battle\StateHolder$1.class
+web\WEB-INF\classes\net\leksi\sea_battle\StateHolder.class
+Скопировано файлов: 58.
+
+F:\leksi\Java\games\sea-battle-current>touch "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF\web.xml" 
