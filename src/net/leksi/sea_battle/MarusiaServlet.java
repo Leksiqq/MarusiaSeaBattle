@@ -21,12 +21,12 @@ import static net.leksi.sea_battle.MarusiaStage.*;
 public class MarusiaServlet extends HttpServlet {
     static private final Map<String, MarusiaSession> sessions = Collections.synchronizedMap(new TreeMap<>());
 
-    static private boolean expirator_working = false;
-    static private long prev_expirator_working_time = 0;
+    static private volatile boolean expirator_working = false;
+    static private volatile long prev_expirator_working_time = 0;
     static private final long EXPIRATOR_PERIOD_SECS = 10;
     static private final long EXPIRATION_TIME_SECS = 60;
 
-    static private String data_dir = null;
+    static private volatile String data_dir = null;
 
     static final int[] RULES_IMAGE_ID = new int[]{0, 457239019, 457239017};
 
@@ -468,11 +468,15 @@ public class MarusiaServlet extends HttpServlet {
             sessions.remove(user_id);
         }
 
-        synchronized (MainServlet.class) {
-            if(now - prev_expirator_working_time > EXPIRATOR_PERIOD_SECS * 1000 && !expirator_working) {
-                prev_expirator_working_time = now;
-                expirator_working = true;
-                new Thread(() -> expirator(now)).start();
+        if(!expirator_working) {
+            synchronized (MainServlet.class) {
+                if(!expirator_working) {
+                    if (now - prev_expirator_working_time > EXPIRATOR_PERIOD_SECS * 1000 && !expirator_working) {
+                        prev_expirator_working_time = now;
+                        expirator_working = true;
+                        new Thread(() -> expirator(now)).start();
+                    }
+                }
             }
         }
 
@@ -690,7 +694,8 @@ public class MarusiaServlet extends HttpServlet {
         resp.setContentType("text/plain");
         resp.setCharacterEncoding("UTF-8");
         resp.setStatus(200);
-        if(req.getRequestURI().equals(req.getContextPath() + "/" + getServletContext().getInitParameter("marusia.sessions.path"))) {
+        if(req.getRequestURI().equals(req.getContextPath() + "/" + getServletContext().getInitParameter("marusia.sessions.path"))
+                || req.getRequestURI().equals(req.getContextPath() + getServletContext().getInitParameter("marusia.sessions.path"))) {
             int[] count = new int[1];
             long now = new Date().getTime();
             pw.println("Sessions");
