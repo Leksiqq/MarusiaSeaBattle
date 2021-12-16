@@ -9,7 +9,7 @@ public class MarusiaPatterns {
     static final String[] PATTERN_CONTINUE = new String[]{"Продолжаем", "Продолжим"};
     static final String PATTERN_NEW_GAME = "Заново";
     static final String PATTERN_BOTH = "По очереди";
-    static final String[] PATTERN_READY = new String[]{"Готов", "Готова", "Готово"};
+    static final String[] PATTERN_READY = new String[]{"Готово", "Готов", "Готова"};
     static final String[] PATTERN_ENEMY = new String[]{"Только я", "я"};
     static final String[] PATTERN_ME = new String[]{"Только Маруся", "Маруся"};
     static final String[] PATTERN_MISSED = new String[]{"Мимо", "Мемы", "Промахнулась", "Промазала", "Не попала"};

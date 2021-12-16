@@ -212,7 +212,7 @@ public class MarusiaServlet extends HttpServlet {
                     }
 
                 } else {
-                    dont_understand_response(response, speaker);
+//                    dont_understand_response(response, speaker);
                     if(!speaker) {
                         rules_response(response, ms, !speaker, speaker);
                     } else {
@@ -229,7 +229,7 @@ public class MarusiaServlet extends HttpServlet {
                 if (command_is_continue(input, ms)) {
                     ms.wait_continue_or_new = false;
                 } else {
-                    dont_understand_response(response, speaker);
+//                    dont_understand_response(response, speaker);
                     continue_game_response(response, true, speaker);
                     break;
                 }
@@ -279,7 +279,7 @@ public class MarusiaServlet extends HttpServlet {
                     break;
                 }
                 if(!in_rules) {
-                    dont_understand_response(response, speaker);
+//                    dont_understand_response(response, speaker);
                 }
                 what_way_response(response, speaker);
                 break;
@@ -344,7 +344,7 @@ public class MarusiaServlet extends HttpServlet {
                     }
                 } else {
                     if (ms.stage == WAIT_ENEMY_READY && !command_is_ready(input, ms)) {
-                        dont_understand_response(response, speaker);
+//                        dont_understand_response(response, speaker);
                         say_when_ready_response(response, true, speaker);
                         if (speaker) {
                             wait_ready_help_response(response, true, speaker);
@@ -398,7 +398,7 @@ public class MarusiaServlet extends HttpServlet {
                             answer_to_my_shoot_response(response, speaker);
                             wait_answer_help_response(response, true, speaker);
                         } else {
-                            dont_understand_response(response, speaker);
+//                            dont_understand_response(response, speaker);
                         }
                     }
                 }
@@ -448,6 +448,9 @@ public class MarusiaServlet extends HttpServlet {
         if (!response.getBoolean("end_session")) {
             if (!ms.in_rules) {
             }
+        }
+        if(!response.has("text")) {
+            dont_understand_response(response, speaker);
         }
         jo1.put("response", response);
         if(ms != null) {
