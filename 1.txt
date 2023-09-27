@@ -1,83 +1,81 @@
+url: https://leksi.net/sea-battle-dev/marusia/speaker
+players: [ME]
+with_help: true
+with_fail: true
+num_games: 2
+num_rules: 3
+tester: net.leksi.sea_battle.WebHookTester-1640362119647
 
-F:\leksi\Java\games\sea-battle-current>set APP=sea-battle-dev 
+Cipher Suite : TLS_AES_128_GCM_SHA256
 
-F:\leksi\Java\games\sea-battle-current>set TARGET=C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev 
+Cert Type : X.509
+Cert Hash Code : 1909361872
+Cert Public Key Algorithm : RSA
+Cert Public Key Format : X.509
+Cert issuer DN: CN=R3, O=Let's Encrypt, C=US
+Cert subject DN: CN=leksi.net
+Cert is valid from Wed Nov 17 09:06:09 MSK 2021 till Tue Feb 15 09:06:08 MSK 2022
 
-F:\leksi\Java\games\sea-battle-current>del /F /Q "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev" 
+Cert Type : X.509
+Cert Hash Code : 544235253
+Cert Public Key Algorithm : RSA
+Cert Public Key Format : X.509
+Cert issuer DN: CN=ISRG Root X1, O=Internet Security Research Group, C=US
+Cert subject DN: CN=R3, O=Let's Encrypt, C=US
+Cert is valid from Fri Sep 04 03:00:00 MSK 2020 till Mon Sep 15 19:00:00 MSK 2025
 
-F:\leksi\Java\games\sea-battle-current>FOR / %p IN ("C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\*") DO echo "%p" 
+Cert Type : X.509
+Cert Hash Code : -1947194216
+Cert Public Key Algorithm : RSA
+Cert Public Key Format : X.509
+Cert issuer DN: CN=DST Root CA X3, O=Digital Signature Trust Co.
+Cert subject DN: CN=ISRG Root X1, O=Internet Security Research Group, C=US
+Cert is valid from Wed Jan 20 22:14:03 MSK 2021 till Mon Sep 30 21:14:03 MSK 2024
 
-F:\leksi\Java\games\sea-battle-current>echo "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\META-INF" 
-"C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\META-INF"
+    ME             
+    А  Б  В  Г  Д  Е  Ж  З  И  К 
+    v  v  v  v  v  v  v  v  v  v 
+ 1> 0  0  0  0  0  0  0  0  0  0 
+ 2> 0  0  0  0  0  0  0  0  0  0 
+ 3> 0  0  0  0  0  0  0  0  0  0 
+ 4> 0  0  0  0  0  0  0  0  0  0 
+ 5> 0  0  0  0  0  0  0  0  0  0 
+ 6> 0  0  0  0  0  0  0  0  0  0 
+ 7> 0  0  0  0  0  0  0  0  0  0 
+ 8> 0  0  0  0  0  0  0  0  0  0 
+ 9> 0  0  0  0  0  0  0  0  0  0 
+10> 0  0  0  0  0  0  0  0  0  0 
 
-F:\leksi\Java\games\sea-battle-current>echo "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF" 
-"C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF"
+tester> запусти навык морской бой
+marusia id> 0
+marusia txt> [приглашаю вас сыграть в морской бой — игру, в которой игроки по очереди называют координаты на скрытой карте соперника, стараясь первыми найти все цели
+, «играем» или слушаем правила «дальше»?]
+marusia tts> [приглашаю вас сыграть в ^морской бой^ -- игру,-- в которой игроки по очереди называют координаты на скрытой карте соперника, стараясь первыми найти все цели.
+-- ^играем^ или слушаем правила ^дальше^ ? --]
+marusia buttons> []
+Any known phrase was not found
+tester> on_interrupt
+marusia id> 1
+marusia txt> [до встречи! ]
+marusia tts> [до встречи! -- ]
+marusia buttons> []
+time elapsed: 1317 ms
+    ME             
+    А  Б  В  Г  Д  Е  Ж  З  И  К 
+    v  v  v  v  v  v  v  v  v  v 
+ 1> 0  0  0  0  0  0  0  0  0  0 
+ 2> 0  0  0  0  0  0  0  0  0  0 
+ 3> 0  0  0  0  0  0  0  0  0  0 
+ 4> 0  0  0  0  0  0  0  0  0  0 
+ 5> 0  0  0  0  0  0  0  0  0  0 
+ 6> 0  0  0  0  0  0  0  0  0  0 
+ 7> 0  0  0  0  0  0  0  0  0  0 
+ 8> 0  0  0  0  0  0  0  0  0  0 
+ 9> 0  0  0  0  0  0  0  0  0  0 
+10> 0  0  0  0  0  0  0  0  0  0 
 
-F:\leksi\Java\games\sea-battle-current>FOR / %p IN ("C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\*") DO rmdir "%p" /s /q 
-
-F:\leksi\Java\games\sea-battle-current>rmdir "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\META-INF" /s /q 
-
-F:\leksi\Java\games\sea-battle-current>rmdir "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF" /s /q 
-
-F:\leksi\Java\games\sea-battle-current>xcopy web\* /E /Y "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev" 
-web\3.css
-web\4.js
-web\index.jsp
-web\META-INF\context.xml
-web\WEB-INF\rules.0.tts
-web\WEB-INF\rules.0.txt
-web\WEB-INF\rules.1.tts
-web\WEB-INF\rules.1.txt
-web\WEB-INF\rules.2.tts
-web\WEB-INF\rules.2.txt
-web\WEB-INF\rules.3.tts
-web\WEB-INF\rules.3.txt
-web\WEB-INF\rules.4.tts
-web\WEB-INF\rules.4.txt
-web\WEB-INF\rules.5.tts
-web\WEB-INF\rules.5.txt
-web\WEB-INF\web.xml
-web\WEB-INF\what_way.speaker.tts
-web\WEB-INF\what_way.tts
-web\WEB-INF\what_way.txt
-web\WEB-INF\classes\net\leksi\sea_battle\Cell.class
-web\WEB-INF\classes\net\leksi\sea_battle\CellState.class
-web\WEB-INF\classes\net\leksi\sea_battle\InputHolder.class
-web\WEB-INF\classes\net\leksi\sea_battle\MainServlet.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$2.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$3.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$4.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands$5.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaCommands.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaPatterns.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaPhrases.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$2.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$3.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet$4.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaServlet.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaSession.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaStage.class
-web\WEB-INF\classes\net\leksi\sea_battle\MarusiaTestServlet.class
-web\WEB-INF\classes\net\leksi\sea_battle\PlayerHolder.class
-web\WEB-INF\classes\net\leksi\sea_battle\PlayerType.class
-web\WEB-INF\classes\net\leksi\sea_battle\ResultType.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$2$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$2.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$3$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$3.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor$4.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessor.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessorTest$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessorTest$Cons.class
-web\WEB-INF\classes\net\leksi\sea_battle\SeaBattleProcessorTest.class
-web\WEB-INF\classes\net\leksi\sea_battle\Ship.class
-web\WEB-INF\classes\net\leksi\sea_battle\Stat.class
-web\WEB-INF\classes\net\leksi\sea_battle\State.class
-web\WEB-INF\classes\net\leksi\sea_battle\StateHolder$1.class
-web\WEB-INF\classes\net\leksi\sea_battle\StateHolder.class
-�����஢��� 䠩���: 58.
-
-F:\leksi\Java\games\sea-battle-current>touch "C:\Program Files\Apache Software Foundation\Tomcat 10.0\webapps\sea-battle-dev\WEB-INF\web.xml" 
+marusia id> 1
+marusia txt> [до встречи! ]
+marusia tts> [до встречи! -- ]
+marusia buttons> []
+time elapsed: 1354 ms

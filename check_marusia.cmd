@@ -1,5 +1,6 @@
 @echo off
 set url=https://leksi.net/sea-battle-dev/marusia/speaker
+rem set url=https://leksi.net/sea-battle/marusia/speaker
 set with_error=true
 set with_fail=true
 set num_games=2
